@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  abaq-alkahrab:
+    build: .
+    container_name: abaq_alkahrab_app
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - HOST=0.0.0.0
+      - DATABASE_PATH=/app/data/misbah_system.db
+    volumes:
+      - abaq_data:/app/data
+
+volumes:
+  abaq_data:
