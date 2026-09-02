@@ -1,0 +1,1673 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>عبق الكهرب | نظام إدارة المسابيح والمبيعات</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              black: '#09090b',
+              surface: '#121214',
+              card: '#18181b',
+              subtle: '#202024',
+              border: '#27272a',
+              hover: '#323238',
+            },
+            accent: {
+              400: '#fbbf24',
+              500: '#f59e0b',
+              600: '#d97706',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- SheetJS for Excel export & import -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <!-- html2canvas and jsPDF for High-Resolution PDF generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body class="bg-[#09090b] text-zinc-100 flex h-screen overflow-hidden antialiased selection:bg-amber-500 selection:text-black">
+
+  <!-- ==================== شاشة تسجيل الدخول الكاملة المستقلة ==================== -->
+  <div id="login-screen-view" class="fixed inset-0 bg-[#09090b] z-[9999] flex items-center justify-center p-4">
+    <div class="bg-[#121214] border border-zinc-800 rounded-2xl max-w-sm w-full p-6 sm:p-7 shadow-2xl space-y-5 text-zinc-100 animate-fade-in">
+      <div class="text-center space-y-2">
+        <img id="login-logo-img" src="https://k.top4top.io/p_38967jw2l0.png?utm_source=chatgpt.com" alt="عبق الكهرب" class="w-16 h-16 mx-auto object-contain rounded-xl bg-zinc-900 border border-zinc-700/60 p-1">
+        <div>
+          <h2 class="font-black text-base sm:text-lg text-zinc-100" id="login-title-name">عبق الكهرب</h2>
+          <p class="text-xs text-amber-500 font-bold">تسجيل الدخول للنظام</p>
+        </div>
+      </div>
+
+      <form id="login-form" onsubmit="handleLogin(event)" class="space-y-3.5 text-xs sm:text-sm">
+        <div>
+          <label class="block font-semibold text-zinc-300 mb-1.5">اسم المستخدم</label>
+          <input type="text" id="login-username" required class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none focus:border-amber-500 transition" value="manager">
+        </div>
+        <div>
+          <label class="block font-semibold text-zinc-300 mb-1.5">كلمة المرور</label>
+          <input type="password" id="login-password" required class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none focus:border-amber-500 transition" value="manager123">
+        </div>
+        <button type="submit" onclick="handleLogin(event)" class="w-full py-2.5 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-zinc-950 font-black rounded-lg transition text-xs sm:text-sm">
+          دخول للنظام
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- خلفية معتمة للموبايل -->
+  <div id="mobile-backdrop" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-black/80 z-40 hidden md:hidden transition-opacity"></div>
+
+  <!-- ==================== الشريط الجانبي SIDEBAR ==================== -->
+  <aside id="main-sidebar" class="fixed md:static inset-y-0 right-0 z-50 w-64 bg-[#121214] border-l border-zinc-800 text-zinc-300 flex flex-col flex-shrink-0 transition-transform duration-200 transform translate-x-full md:translate-x-0">
+    
+    <!-- شعار النظام -->
+    <div class="h-16 px-4 border-b border-zinc-800 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <img id="sidebar-logo-img" src="https://k.top4top.io/p_38967jw2l0.png?utm_source=chatgpt.com" alt="عبق الكهرب" class="w-9 h-9 object-contain rounded-lg bg-zinc-900 border border-zinc-700/50 p-0.5">
+        <div>
+          <h1 class="font-black text-sm md:text-base text-zinc-100 tracking-wide" id="sidebar-store-name">عبق الكهرب</h1>
+          <p class="text-xs text-amber-500 font-semibold">إدارة المسابيح والمبيعات</p>
+        </div>
+      </div>
+      <button onclick="toggleMobileSidebar()" class="md:hidden text-zinc-400 hover:text-zinc-100 p-1.5 rounded-lg">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- معلومات المستخدم الحالي -->
+    <div class="px-4 py-3 bg-[#0e0e10] border-b border-zinc-800/80 flex items-center justify-between">
+      <div class="flex items-center gap-2.5 overflow-hidden">
+        <div class="w-8 h-8 rounded-full bg-amber-500/15 text-amber-400 font-bold flex items-center justify-center text-xs border border-amber-500/30" id="user-avatar">
+          مد
+        </div>
+        <div class="truncate">
+          <div class="text-xs font-bold text-zinc-200 truncate" id="current-user-name">المدير العام (سعد)</div>
+          <div class="text-[10px] text-zinc-400 font-bold uppercase tracking-wider" id="current-user-role">MANAGER</div>
+        </div>
+      </div>
+      <button onclick="handleLogout()" title="تسجيل الخروج" class="text-zinc-400 hover:text-rose-400 p-1.5 rounded hover:bg-zinc-800 transition">
+        <i data-lucide="log-out" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- قائمة التنقل الديناميكية حسب صلاحيات المدير -->
+    <nav class="flex-1 px-3 py-3 space-y-1 overflow-y-auto" id="sidebar-nav">
+      <button onclick="switchTab('dashboard'); closeMobileSidebarIfOpen();" id="nav-dashboard" class="nav-btn active flex items-center gap-3 w-full px-3.5 py-2.5 rounded-lg text-xs font-bold page-nav-btn" data-page="dashboard">
+        <i data-lucide="layout-dashboard" class="w-4 h-4 text-amber-500"></i>
+        <span>لوحة التحكم</span>
+      </button>
+
+      <button onclick="switchTab('misbahs'); closeMobileSidebarIfOpen();" id="nav-misbahs" class="nav-btn flex items-center gap-3 w-full px-3.5 py-2.5 rounded-lg text-xs page-nav-btn" data-page="misbahs">
+        <i data-lucide="package" class="w-4 h-4 text-zinc-400"></i>
+        <span>المسابيح / المخزون</span>
+      </button>
+
+      <button onclick="switchTab('sales'); closeMobileSidebarIfOpen();" id="nav-sales" class="nav-btn flex items-center gap-3 w-full px-3.5 py-2.5 rounded-lg text-xs page-nav-btn" data-page="sales">
+        <i data-lucide="shopping-bag" class="w-4 h-4 text-zinc-400"></i>
+        <span>الطلبات والمبيعات</span>
+      </button>
+
+      <button onclick="switchTab('customers'); closeMobileSidebarIfOpen();" id="nav-customers" class="nav-btn flex items-center gap-3 w-full px-3.5 py-2.5 rounded-lg text-xs page-nav-btn" data-page="customers">
+        <i data-lucide="users" class="w-4 h-4 text-zinc-400"></i>
+        <span>العملاء المعتمدين</span>
+      </button>
+
+      <button onclick="switchTab('owners'); closeMobileSidebarIfOpen();" id="nav-owners" class="nav-btn flex items-center gap-3 w-full px-3.5 py-2.5 rounded-lg text-xs page-nav-btn" data-page="owners">
+        <i data-lucide="wallet-cards" class="w-4 h-4 text-zinc-400"></i>
+        <span>أصحاب المسابيح والمستحقات</span>
+      </button>
+
+      <button onclick="switchTab('reports'); closeMobileSidebarIfOpen();" id="nav-reports" class="nav-btn flex items-center gap-3 w-full px-3.5 py-2.5 rounded-lg text-xs page-nav-btn" data-page="reports">
+        <i data-lucide="bar-chart-3" class="w-4 h-4 text-zinc-400"></i>
+        <span>التقارير المالية</span>
+      </button>
+
+      <!-- أقسام الإدارة والمستخدمين -->
+      <div class="pt-2 border-t border-zinc-800/80 mt-2 space-y-1" id="sidebar-admin-section">
+        <button onclick="switchTab('users'); closeMobileSidebarIfOpen();" id="nav-users" class="nav-btn flex items-center gap-3 w-full px-3.5 py-2.5 rounded-lg text-xs page-nav-btn" data-page="users">
+          <i data-lucide="shield-check" class="w-4 h-4 text-zinc-400"></i>
+          <span>المستخدمون والصلاحيات</span>
+        </button>
+
+        <button onclick="switchTab('settings'); closeMobileSidebarIfOpen();" id="nav-settings" class="nav-btn flex items-center gap-3 w-full px-3.5 py-2.5 rounded-lg text-xs page-nav-btn" data-page="settings">
+          <i data-lucide="settings" class="w-4 h-4 text-zinc-400"></i>
+          <span>الهوية والإعدادات</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- زر تسجيل طلب جديد -->
+    <div class="p-3 border-t border-zinc-800 bg-[#0e0e10] action-container" data-perm-page="sales">
+      <button onclick="openNewSaleModal(); closeMobileSidebarIfOpen();" class="w-full bg-amber-500 hover:bg-amber-600 text-zinc-950 font-black py-2.5 px-3 rounded-lg text-xs flex items-center justify-center gap-2 transition">
+        <i data-lucide="plus-circle" class="w-4 h-4 text-zinc-950"></i>
+        <span>تسجيل طلب جديد</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ==================== المحتوى الرئيسي MAIN CONTENT ==================== -->
+  <main class="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#09090b]">
+    
+    <!-- شريط علوي Topbar -->
+    <header class="h-16 bg-[#121214] border-b border-zinc-800 px-4 md:px-6 flex items-center justify-between flex-shrink-0 z-20">
+      <div class="flex items-center gap-3">
+        <button onclick="toggleMobileSidebar()" class="md:hidden text-zinc-300 hover:text-zinc-100 p-2 rounded-lg bg-zinc-800">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+        <div class="flex items-center gap-2.5">
+          <img id="topbar-logo-img" src="https://k.top4top.io/p_38967jw2l0.png?utm_source=chatgpt.com" alt="لوقو" class="w-7 h-7 object-contain md:hidden">
+          <h2 id="page-title" class="text-sm md:text-base font-bold text-zinc-100">لوحة التحكم</h2>
+        </div>
+      </div>
+
+      <!-- أدوات وأزرار علوية سريعة -->
+      <div class="flex items-center gap-2.5">
+        <div class="relative hidden sm:block w-52 md:w-60">
+          <i data-lucide="search" class="w-4 h-4 text-zinc-500 absolute right-3 top-1/2 -translate-y-1/2"></i>
+          <input type="text" id="global-search-input" onkeyup="handleGlobalSearch(event)" placeholder="بحث برقم الطلب (Enter)..." 
+                 class="w-full pl-3 pr-9 py-1.5 text-xs bg-zinc-900 border border-zinc-800 rounded-lg focus:outline-none focus:border-amber-500 text-zinc-100 placeholder-zinc-500 transition">
+        </div>
+
+        <button onclick="refreshCurrentData()" title="تحديث البيانات" class="p-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 rounded-lg border border-zinc-800 transition">
+          <i data-lucide="refresh-cw" class="w-4 h-4" id="sync-icon"></i>
+        </button>
+
+        <button onclick="openNewMisbahModal()" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 border border-zinc-700 transition action-btn" data-perm-page="misbahs">
+          <i data-lucide="plus" class="w-4 h-4 text-amber-400"></i>
+          <span>إضافة مسباح</span>
+        </button>
+
+        <button onclick="openNewSaleModal()" class="bg-amber-500 hover:bg-amber-600 text-zinc-950 px-3.5 py-2 rounded-lg text-xs font-black flex items-center gap-2 transition action-btn" data-perm-page="sales">
+          <i data-lucide="shopping-bag" class="w-4 h-4 text-zinc-950"></i>
+          <span>تسجيل طلب جديد</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- مساحة المحتوى القابل للتمرير -->
+    <div class="flex-1 overflow-y-auto p-4 sm:p-5 md:p-6 space-y-4" id="content-container">
+
+      <!-- ======================================================== -->
+      <!-- 1. لوحة التحكم DASHBOARD -->
+      <!-- ======================================================== -->
+      <section id="tab-dashboard" class="tab-content space-y-4">
+        
+        <div class="bg-[#121214] p-3.5 rounded-xl border border-zinc-800 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2 text-xs sm:text-sm font-bold text-zinc-300">
+            <i data-lucide="calendar" class="w-4 h-4 text-amber-500"></i>
+            <span>فلترة الفترة الزمنية:</span>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-1.5" id="dashboard-date-filters">
+            <button onclick="setDashboardDateFilter('')" id="filter-btn-all" class="date-filter-btn active">الكل</button>
+            <button onclick="setDashboardDateFilter('today')" id="filter-btn-today" class="date-filter-btn">اليوم</button>
+            <button onclick="setDashboardDateFilter('yesterday')" id="filter-btn-yesterday" class="date-filter-btn">أمس</button>
+            <button onclick="setDashboardDateFilter('this_week')" id="filter-btn-this_week" class="date-filter-btn">هذا الأسبوع</button>
+            <button onclick="setDashboardDateFilter('last_week')" id="filter-btn-last_week" class="date-filter-btn">الأسبوع السابق</button>
+            <button onclick="setDashboardDateFilter('this_month')" id="filter-btn-this_month" class="date-filter-btn">هذا الشهر</button>
+            <button onclick="setDashboardDateFilter('last_month')" id="filter-btn-last_month" class="date-filter-btn">الشهر السابق</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div onclick="switchTab('misbahs'); filterMisbahsByTab('stock');" class="cursor-pointer bg-[#121214] p-4 rounded-xl border border-zinc-800 hover:border-zinc-700 transition group">
+            <div class="flex justify-between items-center mb-1 text-xs text-zinc-400 font-semibold">
+              <span>المسابيح بالمخزون</span>
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            </div>
+            <div class="text-2xl font-black text-zinc-100" id="kpi-current-misbahs">0</div>
+            <p class="text-xs text-zinc-500 mt-1">المتوفر والمحجوز حالياً (ثابت)</p>
+          </div>
+
+          <div onclick="switchTab('sales');" class="cursor-pointer bg-[#121214] p-4 rounded-xl border border-zinc-800 hover:border-zinc-700 transition group">
+            <div class="flex justify-between items-center mb-1 text-xs text-zinc-400 font-semibold">
+              <span>المسابيح المباعة</span>
+              <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+            </div>
+            <div class="text-2xl font-black text-zinc-100" id="kpi-sold-misbahs">0</div>
+            <p class="text-xs text-zinc-500 mt-1">خلال الفترة المحددة</p>
+          </div>
+
+          <div onclick="switchTab('sales');" class="cursor-pointer bg-[#121214] p-4 rounded-xl border border-zinc-800 hover:border-zinc-700 transition group">
+            <div class="flex justify-between items-center mb-1 text-xs text-zinc-400 font-semibold">
+              <span>إجمالي المبيعات</span>
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+            </div>
+            <div class="text-2xl font-black text-amber-400"><span id="kpi-total-sales">0</span> <span class="text-xs font-bold text-zinc-400">د.ك</span></div>
+            <p class="text-xs text-zinc-500 mt-1">المبيعات المدفوعة بالفترة</p>
+          </div>
+
+          <div onclick="switchTab('reports');" class="cursor-pointer bg-[#121214] p-4 rounded-xl border border-amber-500/30 bg-amber-500/[0.02] hover:border-amber-500/50 transition group">
+            <div class="flex justify-between items-center mb-1 text-xs text-amber-400 font-bold">
+              <span>صافي الأرباح</span>
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+            </div>
+            <div class="text-2xl font-black text-amber-400"><span id="kpi-total-profit">0</span> <span class="text-xs font-bold text-amber-300">د.ك</span></div>
+            <p class="text-xs text-zinc-400 mt-1">الأرباح المحققة بالفترة</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div onclick="switchTab('owners');" class="cursor-pointer bg-[#121214] p-4 rounded-xl border border-zinc-800 hover:border-zinc-700 transition flex items-center justify-between">
+            <div>
+              <span class="text-xs text-rose-400 font-bold block">المستحق للملاك (واجب السداد)</span>
+              <div class="text-xl font-black text-rose-400 mt-1"><span id="kpi-due-to-owners">0</span> <span class="text-xs font-bold text-zinc-400">د.ك</span></div>
+              <p class="text-xs text-zinc-500 mt-0.5">بعد خصم ربح النظام</p>
+            </div>
+            <i data-lucide="clock" class="w-6 h-6 text-rose-500/60"></i>
+          </div>
+
+          <div onclick="switchTab('owners');" class="cursor-pointer bg-[#121214] p-4 rounded-xl border border-zinc-800 hover:border-zinc-700 transition flex items-center justify-between">
+            <div>
+              <span class="text-xs text-emerald-400 font-bold block">المسدد للملاك (خالص)</span>
+              <div class="text-xl font-black text-zinc-100 mt-1"><span id="kpi-paid-to-owners">0</span> <span class="text-xs font-bold text-zinc-400">د.ك</span></div>
+              <p class="text-xs text-zinc-500 mt-0.5">تم تحويله للموردين</p>
+            </div>
+            <i data-lucide="check-circle" class="w-6 h-6 text-emerald-500/60"></i>
+          </div>
+        </div>
+
+        <!-- أحدث المبيعات -->
+        <div class="bg-[#121214] rounded-xl border border-zinc-800 overflow-hidden">
+          <div class="px-4 py-3 border-b border-zinc-800 flex items-center justify-between">
+            <h3 class="font-bold text-xs sm:text-sm text-zinc-200 flex items-center gap-2">
+              <i data-lucide="receipt" class="w-4 h-4 text-amber-500"></i>
+              <span>أحدث الفواتير والطلبات الصادرة</span>
+            </h3>
+            <button onclick="switchTab('sales')" class="text-xs font-semibold text-amber-500 hover:text-amber-400">عرض الكل</button>
+          </div>
+          
+          <div class="overflow-x-auto">
+            <table class="w-full text-right text-xs sm:text-sm">
+              <thead class="bg-zinc-900/60 text-zinc-400 border-b border-zinc-800">
+                <tr>
+                  <th class="py-3 px-3.5">رقم الفاتورة</th>
+                  <th class="py-3 px-3.5">رقم الطلب</th>
+                  <th class="py-3 px-3.5">العميل المعتمد</th>
+                  <th class="py-3 px-3.5">سعر البيع</th>
+                  <th class="py-3 px-3.5">حالة الطلب</th>
+                  <th class="py-3 px-3.5">حالة الاستلام</th>
+                  <th class="py-3 px-3.5">التاريخ</th>
+                  <th class="py-3 px-3.5 text-center">الفاتورة</th>
+                </tr>
+              </thead>
+              <tbody id="dashboard-recent-sales-tbody" class="divide-y divide-zinc-800/50"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- 2. صفحة المسابيح / المخزون -->
+      <!-- ======================================================== -->
+      <section id="tab-misbahs" class="tab-content hidden space-y-4">
+        
+        <div class="flex flex-wrap gap-2 border-b border-zinc-800 pb-3">
+          <button onclick="filterMisbahsByTab('stock')" id="misbah-tab-stock" class="cycle-tab-btn active px-4 py-2 rounded-lg text-xs sm:text-sm font-bold bg-amber-500 text-zinc-950 transition">
+            حالي بالمخزون (المتوفرة للبيع)
+          </button>
+          <button onclick="filterMisbahsByTab('returned')" id="misbah-tab-returned" class="cycle-tab-btn px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold bg-zinc-900 text-zinc-300 hover:bg-zinc-800 border border-zinc-800 transition">
+            مسترجع ↩️
+          </button>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex flex-wrap items-center gap-2 flex-1">
+            <div class="relative flex-1 min-w-[220px]">
+              <i data-lucide="search" class="w-4 h-4 text-zinc-500 absolute right-3 top-1/2 -translate-y-1/2"></i>
+              <input type="text" id="misbahs-search" oninput="loadMisbahs()" placeholder="بحث برقم الطلب، القصة، الخامة، المورد..." 
+                     class="w-full pl-3 pr-9 py-2 text-xs sm:text-sm bg-zinc-900 border border-zinc-800 rounded-lg focus:outline-none focus:border-amber-500 text-zinc-100 placeholder-zinc-500">
+            </div>
+
+            <select id="misbahs-cut-filter" onchange="loadMisbahs()" class="py-2 px-3 text-xs sm:text-sm bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-200 outline-none">
+              <option value="">جميع القصات</option>
+              <option value="برميلي">برميلي</option>
+              <option value="ذروي">ذروي</option>
+              <option value="اسطواني">اسطواني</option>
+              <option value="كروي">كروي</option>
+              <option value="تفاحي">تفاحي</option>
+              <option value="زيتوني">زيتوني</option>
+              <option value="بيضاوي">بيضاوي</option>
+              <option value="صنوبري">صنوبري</option>
+            </select>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button onclick="exportTableToExcel('misbahs-table', 'مخزون_عبق_الكهرب')" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
+              <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-400"></i>
+              <span>تصدير Excel</span>
+            </button>
+            <button onclick="openNewMisbahModal()" class="bg-amber-500 hover:bg-amber-600 text-zinc-950 px-4 py-2 rounded-lg text-xs sm:text-sm font-black flex items-center gap-1.5 transition action-btn" data-perm-page="misbahs">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span>إضافة مسباح للمخزون</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-[#121214] rounded-xl border border-zinc-800 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table id="misbahs-table" class="w-full text-right text-xs sm:text-sm">
+              <thead class="bg-zinc-900/80 text-zinc-400 font-bold border-b border-zinc-800">
+                <tr>
+                  <th class="py-3 px-3.5">رقم الطلب</th>
+                  <th class="py-3 px-3.5">حالة المسباح</th>
+                  <th class="py-3 px-3.5">صاحب المسباح / المورد</th>
+                  <th class="py-3 px-3.5">القصة</th>
+                  <th class="py-3 px-3.5">الخامة</th>
+                  <th class="py-3 px-3.5">الوزن (ج)</th>
+                  <th class="py-3 px-3.5">الخرز</th>
+                  <th class="py-3 px-3.5">السعر الأصلي</th>
+                  <th class="py-3 px-3.5 text-amber-300">ربح النظام</th>
+                  <th class="py-3 px-3.5 text-rose-300">المستحق للمورد</th>
+                  <th class="py-3 px-3.5 text-amber-400 font-bold">سعر البيع</th>
+                  <th class="py-3 px-3.5 text-center no-print">إجراءات وسجل المسباح</th>
+                </tr>
+              </thead>
+              <tbody id="misbahs-tbody" class="divide-y divide-zinc-800/50"></tbody>
+            </table>
+          </div>
+          <div id="misbahs-empty" class="hidden p-8 text-center text-zinc-500">
+            <p>لا توجد مسابيح مطابقة</p>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- 3. صفحة الطلبات والمبيعات -->
+      <!-- ======================================================== -->
+      <section id="tab-sales" class="tab-content hidden space-y-4">
+        
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex flex-wrap items-center gap-2 flex-1">
+            <div class="relative flex-1 min-w-[220px]">
+              <i data-lucide="search" class="w-4 h-4 text-zinc-500 absolute right-3 top-1/2 -translate-y-1/2"></i>
+              <input type="text" id="sales-search" oninput="loadSales()" placeholder="بحث برقم الطلب، الفاتورة، العميل..." 
+                     class="w-full pl-3 pr-9 py-2 text-xs sm:text-sm bg-zinc-900 border border-zinc-800 rounded-lg focus:outline-none focus:border-amber-500 text-zinc-100 placeholder-zinc-500">
+            </div>
+
+            <select id="sales-status-filter" onchange="loadSales()" class="py-2 px-3 text-xs sm:text-sm bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-200 outline-none">
+              <option value="">جميع الحالات</option>
+              <option value="محجوز / غير مدفوع">محجوز / غير مدفوع ⏳</option>
+              <option value="محجوز / مدفوع">محجوز / مدفوع 📄</option>
+              <option value="مسترجع">مسترجع ↩️</option>
+            </select>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button onclick="exportTableToExcel('sales-table', 'طلبات_ومبيعات_عبق_الكهرب')" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
+              <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-400"></i>
+              <span>تصدير Excel</span>
+            </button>
+            <button onclick="openNewSaleModal()" class="bg-amber-500 hover:bg-amber-600 text-zinc-950 px-4 py-2 rounded-lg text-xs sm:text-sm font-black flex items-center gap-1.5 transition action-btn" data-perm-page="sales">
+              <i data-lucide="plus-circle" class="w-4 h-4 text-zinc-950"></i>
+              <span>تسجيل طلب جديد</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-[#121214] rounded-xl border border-zinc-800 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table id="sales-table" class="w-full text-right text-xs sm:text-sm">
+              <thead class="bg-zinc-900/80 text-zinc-400 font-bold border-b border-zinc-800">
+                <tr>
+                  <th class="py-3 px-3.5">رقم الطلب / الفاتورة</th>
+                  <th class="py-3 px-3.5">حالة الطلب</th>
+                  <th class="py-3 px-3.5">العميل المعتمد</th>
+                  <th class="py-3 px-3.5">المسباح</th>
+                  <th class="py-3 px-3.5 text-amber-400">سعر البيع</th>
+                  <th class="py-3 px-3.5">طريقة الدفع</th>
+                  <th class="py-3 px-3.5">حالة الاستلام</th>
+                  <th class="py-3 px-3.5">التاريخ</th>
+                  <th class="py-3 px-3.5 text-center no-print">إجراءات الإدارة / تعديل وحذف</th>
+                </tr>
+              </thead>
+              <tbody id="sales-tbody" class="divide-y divide-zinc-800/50"></tbody>
+            </table>
+          </div>
+          <div id="sales-empty" class="hidden p-8 text-center text-zinc-500">
+            <p>لا توجد طلبات مسجلة</p>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- 4. صفحة العملاء المعتمدين -->
+      <!-- ======================================================== -->
+      <section id="tab-customers" class="tab-content hidden space-y-4">
+        
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex flex-wrap items-center gap-2 flex-1">
+            <div class="relative flex-1 min-w-[220px]">
+              <i data-lucide="search" class="w-4 h-4 text-zinc-500 absolute right-3 top-1/2 -translate-y-1/2"></i>
+              <input type="text" id="customers-search" oninput="loadCustomers()" placeholder="بحث باسم العميل، الهاتف، TikTok..." 
+                     class="w-full pl-3 pr-9 py-2 text-xs sm:text-sm bg-zinc-900 border border-zinc-800 rounded-lg focus:outline-none focus:border-amber-500 text-zinc-100 placeholder-zinc-500">
+            </div>
+
+            <select id="customers-reliability-filter" onchange="loadCustomers()" class="py-2 px-3 text-xs sm:text-sm bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-200 outline-none">
+              <option value="">جميع حالات الاعتماد</option>
+              <option value="معتمد">معتمد ✅</option>
+              <option value="محظور">محظور ⛔</option>
+            </select>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="downloadExcelTemplate()" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition" title="تحميل نموذج جاهز لإدخال العملاء">
+              <i data-lucide="download" class="w-4 h-4 text-amber-400"></i>
+              <span>تحميل نموذج Excel</span>
+            </button>
+
+            <button onclick="openImportCustomersModal()" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition action-btn" data-perm-page="customers">
+              <i data-lucide="upload" class="w-4 h-4 text-emerald-400"></i>
+              <span>استيراد من Excel</span>
+            </button>
+
+            <button onclick="openNewCustomerModal()" class="bg-amber-500 hover:bg-amber-600 text-zinc-950 px-4 py-2 rounded-lg text-xs sm:text-sm font-black flex items-center gap-1.5 transition action-btn" data-perm-page="customers">
+              <i data-lucide="user-plus" class="w-4 h-4"></i>
+              <span>توثيق واعتماد شخص</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-[#121214] rounded-xl border border-zinc-800 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table id="customers-table" class="w-full text-right text-xs sm:text-sm">
+              <thead class="bg-zinc-900/80 text-zinc-400 font-bold border-b border-zinc-800">
+                <tr>
+                  <th class="py-3 px-3.5">#</th>
+                  <th class="py-3 px-3.5">الاسم الكامل</th>
+                  <th class="py-3 px-3.5">رقم الهاتف</th>
+                  <th class="py-3 px-3.5">TikTok</th>
+                  <th class="py-3 px-3.5">الدولة</th>
+                  <th class="py-3 px-3.5">تاريخ ووقت الاعتماد</th>
+                  <th class="py-3 px-3.5">حالة الاعتماد</th>
+                  <th class="py-3 px-3.5 text-center no-print">السجل الموحد / إجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="customers-tbody" class="divide-y divide-zinc-800/50"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- 5. أصحاب المسابيح والمستحقات (عرض كل طلب تفصيلي) -->
+      <!-- ======================================================== -->
+      <section id="tab-owners" class="tab-content hidden space-y-4">
+        
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div class="p-3.5 bg-[#121214] border border-zinc-800 rounded-xl text-center">
+            <span class="text-xs text-zinc-400 block mb-1">إجمالي المستحقات</span>
+            <span class="text-base sm:text-lg font-black text-zinc-100"><span id="owner-kpi-total-dues">0</span> د.ك</span>
+          </div>
+
+          <div class="p-3.5 bg-rose-950/15 border border-rose-900/30 rounded-xl text-center">
+            <span class="text-xs text-rose-400 font-bold block mb-1">المتبقي (واجب السداد)</span>
+            <span class="text-base sm:text-lg font-black text-rose-400"><span id="owner-kpi-pending-dues">0</span> د.ك</span>
+          </div>
+
+          <div class="p-3.5 bg-emerald-950/15 border border-emerald-900/30 rounded-xl text-center">
+            <span class="text-xs text-emerald-400 font-bold block mb-1">تم سداده</span>
+            <span class="text-base sm:text-lg font-black text-emerald-400"><span id="owner-kpi-paid-dues">0</span> د.ك</span>
+          </div>
+
+          <div class="p-3.5 bg-[#121214] border border-zinc-800 rounded-xl text-center">
+            <span class="text-xs text-zinc-400 block mb-1">القطع الحالية</span>
+            <span class="text-base sm:text-lg font-black text-zinc-100" id="owner-kpi-current-count">0</span>
+          </div>
+
+          <div class="p-3.5 bg-[#121214] border border-zinc-800 rounded-xl text-center col-span-2 sm:col-span-1">
+            <span class="text-xs text-zinc-400 block mb-1">القطع المسددة</span>
+            <span class="text-base sm:text-lg font-black text-zinc-100" id="owner-kpi-settled-count">0</span>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex flex-wrap gap-2">
+            <button onclick="filterOwnerItemsTab('all')" id="owner-item-tab-all" class="cycle-tab-btn active px-4 py-2 rounded-lg text-xs font-bold bg-amber-500 text-zinc-950 transition">
+              الكل (جميع الطلبات)
+            </button>
+            <button onclick="filterOwnerItemsTab('pending')" id="owner-item-tab-pending" class="cycle-tab-btn px-4 py-2 rounded-lg text-xs font-semibold bg-zinc-900 text-rose-400 border border-zinc-800 hover:border-zinc-700 transition">
+              المتبقي (لم يتم السداد)
+            </button>
+            <button onclick="filterOwnerItemsTab('settled')" id="owner-item-tab-settled" class="cycle-tab-btn px-4 py-2 rounded-lg text-xs font-semibold bg-zinc-900 text-emerald-400 border border-zinc-800 hover:border-zinc-700 transition">
+              تم السداد (خالص ✅)
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button onclick="paySelectedOwnerBatch()" class="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-black px-3.5 py-2 rounded-lg text-xs transition action-btn" data-perm-page="owners">
+              سداد الطلبات المحددة
+            </button>
+            <button onclick="exportTableToExcel('owners-items-table', 'مستحقات_أصحاب_المسابيح_التفصيلية')" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
+              <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-400"></i>
+              <span>تصدير Excel</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-[#121214] rounded-xl border border-zinc-800 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table id="owners-items-table" class="w-full text-right text-xs sm:text-sm">
+              <thead class="bg-zinc-900/80 text-zinc-400 font-bold border-b border-zinc-800">
+                <tr>
+                  <th class="py-3 px-3 text-center">
+                    <input type="checkbox" id="select-all-owner-items" onchange="toggleSelectAllOwnerItems()" class="w-4 h-4 rounded text-amber-500 bg-zinc-900 border-zinc-700">
+                  </th>
+                  <th class="py-3 px-3.5">رقم الطلب</th>
+                  <th class="py-3 px-3.5">اسم صاحب المسباح / المورد</th>
+                  <th class="py-3 px-3.5">القصة والخامة</th>
+                  <th class="py-3 px-3.5">السعر الأصلي</th>
+                  <th class="py-3 px-3.5 text-amber-300">ربح النظام</th>
+                  <th class="py-3 px-3.5 text-rose-300 font-bold">المستحق للمورد</th>
+                  <th class="py-3 px-3.5">المبلغ المسدد</th>
+                  <th class="py-3 px-3.5">المبلغ المتبقي</th>
+                  <th class="py-3 px-3.5">حالة السداد</th>
+                  <th class="py-3 px-3.5">تاريخ السداد</th>
+                  <th class="py-3 px-3.5 text-center no-print">إجراء</th>
+                </tr>
+              </thead>
+              <tbody id="owners-items-tbody" class="divide-y divide-zinc-800/50"></tbody>
+            </table>
+          </div>
+          <div id="owners-items-empty" class="hidden p-8 text-center text-zinc-500">
+            <p>لا توجد طلبات في هذا القسم</p>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- 6. التقارير المالية (جميع التقارير الـ4 تحت بعض بصفحة واحدة) -->
+      <!-- ======================================================== -->
+      <section id="tab-reports" class="tab-content hidden space-y-6">
+        <div class="bg-[#121214] p-4 rounded-xl border border-zinc-800 flex items-center justify-between">
+          <div>
+            <h3 class="font-bold text-base text-zinc-100 flex items-center gap-2">
+              <i data-lucide="bar-chart-3" class="w-5 h-5 text-amber-500"></i>
+              <span>التقارير المالية الشاملة</span>
+            </h3>
+            <p class="text-xs text-zinc-400 mt-0.5">عرض تقارير المبيعات والأرباح والمخزون والمستحقات موحدة في صفحة واحدة</p>
+          </div>
+          <button onclick="loadAllFinancialReports()" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 border border-zinc-700 transition">
+            <i data-lucide="refresh-cw" class="w-4 h-4 text-amber-400"></i>
+            <span>تحديث التقارير</span>
+          </button>
+        </div>
+
+        <!-- 1. تقرير المبيعات -->
+        <div id="report-sales-container" class="bg-[#121214] p-5 rounded-xl border border-zinc-800 space-y-4"></div>
+
+        <!-- 2. تقرير الأرباح -->
+        <div id="report-profits-container" class="bg-[#121214] p-5 rounded-xl border border-zinc-800 space-y-4"></div>
+
+        <!-- 3. تقرير المخزون -->
+        <div id="report-inventory-container" class="bg-[#121214] p-5 rounded-xl border border-zinc-800 space-y-4"></div>
+
+        <!-- 4. تقرير المستحقات -->
+        <div id="report-dues-container" class="bg-[#121214] p-5 rounded-xl border border-zinc-800 space-y-4"></div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- 7. المستخدمون والصلاحيات (يحدد المدير صلاحيات كل موظف) -->
+      <!-- ======================================================== -->
+      <section id="tab-users" class="tab-content hidden space-y-4">
+        <div class="bg-[#121214] p-4 rounded-xl border border-zinc-800 flex items-center justify-between">
+          <div>
+            <h3 class="font-bold text-sm text-zinc-100">إدارة المستخدمين والصلاحيات المخصصة</h3>
+            <p class="text-xs text-zinc-400">تحديد الصفحات الظاهرة لكل موظف وتخصيص صلاحيات (تعديل كامل / رؤية فقط)</p>
+          </div>
+          <button onclick="openNewUserModal()" class="bg-amber-500 hover:bg-amber-600 text-zinc-950 px-4 py-2 rounded-lg text-xs font-black transition">
+            إضافة موظف جديد
+          </button>
+        </div>
+
+        <div class="bg-[#121214] rounded-xl border border-zinc-800 overflow-hidden">
+          <table class="w-full text-right text-xs sm:text-sm">
+            <thead class="bg-zinc-900/80 text-zinc-400 font-bold border-b border-zinc-800">
+              <tr>
+                <th class="py-3 px-3.5">#</th>
+                <th class="py-3 px-3.5">اسم المستخدم</th>
+                <th class="py-3 px-3.5">الاسم الكامل</th>
+                <th class="py-3 px-3.5">الدور الرئيسي</th>
+                <th class="py-3 px-3.5">الصلاحيات المخصصة</th>
+                <th class="py-3 px-3.5">حالة الحساب</th>
+                <th class="py-3 px-3.5 text-center no-print">إجراءات الصلاحية</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody" class="divide-y divide-zinc-800/50"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- 8. الهوية والإعدادات والنسخ الاحتياطي -->
+      <!-- ======================================================== -->
+      <section id="tab-settings" class="tab-content hidden space-y-4">
+        <div class="bg-[#121214] p-5 rounded-xl border border-zinc-800 max-w-3xl space-y-6">
+          
+          <div class="space-y-4">
+            <h3 class="font-bold text-sm text-zinc-100 border-b border-zinc-800 pb-2.5 flex items-center gap-2">
+              <i data-lucide="palette" class="w-4 h-4 text-amber-500"></i>
+              <span>تخصيص الشعار والهوية</span>
+            </h3>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="p-3.5 bg-zinc-900 border border-zinc-800 rounded-lg space-y-2.5">
+                <label class="block font-bold text-zinc-200 text-xs">شعار الموقع</label>
+                <div class="flex items-center gap-3">
+                  <img id="preview-system-logo" src="https://k.top4top.io/p_38967jw2l0.png?utm_source=chatgpt.com" alt="معاينة" class="w-14 h-14 object-contain rounded-lg bg-zinc-950 border border-zinc-800 p-1">
+                  <div class="space-y-1.5 flex-1">
+                    <label class="cursor-pointer bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-1.5 rounded text-xs font-semibold block text-center border border-zinc-700 transition">
+                      <span>رفع لوقو الموقع</span>
+                      <input type="file" id="system-logo-input" onchange="handleLogoUpload(event, 'system')" accept="image/*" class="hidden">
+                    </label>
+                    <button type="button" onclick="resetLogoToDefault('system')" class="text-xs text-zinc-500 hover:text-zinc-300 block text-right">استعادة الافتراضي</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="p-3.5 bg-zinc-900 border border-zinc-800 rounded-lg space-y-2.5">
+                <label class="block font-bold text-zinc-200 text-xs">شعار الفاتورة والـ PDF</label>
+                <div class="flex items-center gap-3">
+                  <img id="preview-invoice-logo" src="https://k.top4top.io/p_38967jw2l0.png?utm_source=chatgpt.com" alt="معاينة" class="w-14 h-14 object-contain rounded-lg bg-zinc-950 border border-zinc-800 p-1">
+                  <div class="space-y-1.5 flex-1">
+                    <label class="cursor-pointer bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-1.5 rounded text-xs font-semibold block text-center border border-zinc-700 transition">
+                      <span>رفع لوقو الفاتورة</span>
+                      <input type="file" id="invoice-logo-input" onchange="handleLogoUpload(event, 'invoice')" accept="image/*" class="hidden">
+                    </label>
+                    <button type="button" onclick="resetLogoToDefault('invoice')" class="text-xs text-zinc-500 hover:text-zinc-300 block text-right">استعادة الافتراضي</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button type="button" onclick="saveIdentityLogos()" class="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-black px-4 py-2 rounded-lg text-xs transition">
+              حفظ الشعار على السيرفر
+            </button>
+          </div>
+
+          <form id="settings-form" onsubmit="saveSettings(event)" class="space-y-4 text-xs sm:text-sm border-t border-zinc-800 pt-5">
+            <h4 class="font-bold text-sm text-zinc-200">البيانات العامة</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label class="block font-semibold text-zinc-400 mb-1">اسم النظام</label>
+                <input type="text" id="setting-store-name" class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none">
+              </div>
+              <div>
+                <label class="block font-semibold text-zinc-400 mb-1">العملة</label>
+                <input type="text" id="setting-currency" value="د.ك" class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none">
+              </div>
+              <div>
+                <label class="block font-semibold text-zinc-400 mb-1">الهاتف</label>
+                <input type="text" id="setting-phone" class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none">
+              </div>
+              <div>
+                <label class="block font-semibold text-zinc-400 mb-1">TikTok</label>
+                <input type="text" id="setting-tiktok" class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none">
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-semibold text-zinc-400 mb-1">تذييل الفاتورة</label>
+              <textarea id="setting-invoice-footer" rows="2" class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none"></textarea>
+            </div>
+
+            <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-black px-4 py-2 rounded-lg transition">
+              حفظ الإعدادات
+            </button>
+          </form>
+
+          <div class="border-t border-zinc-800 pt-5 space-y-3">
+            <h4 class="font-bold text-sm text-zinc-200">النسخ الاحتياطي وقاعدة البيانات</h4>
+            <div class="flex flex-wrap gap-2.5">
+              <button onclick="downloadBackup()" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition">
+                <i data-lucide="download" class="w-4 h-4 text-amber-400"></i>
+                <span>تحميل النسخة الاحتياطية JSON</span>
+              </button>
+
+              <label class="cursor-pointer bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition">
+                <i data-lucide="upload" class="w-4 h-4 text-emerald-400"></i>
+                <span>استرجاع نسخة من ملف</span>
+                <input type="file" id="restore-file-input" onchange="restoreBackup(event)" accept=".json" class="hidden">
+              </label>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ==================== النوافذ المنبثقة MODALS ==================== -->
+
+  <!-- 1. نافذة تعديل وحذف أي طلب للإدارة (Manager & Admin) -->
+  <div id="modal-admin-edit-sale" class="fixed inset-0 custom-modal-backdrop z-50 hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-[#121214] border border-zinc-800 rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in text-zinc-100">
+      <div class="p-4 border-b border-zinc-800 flex items-center justify-between bg-[#0e0e10] rounded-t-xl">
+        <div>
+          <h3 class="font-bold text-sm text-zinc-100">تعديل الطلب / الحالة (صلاحية الإدارة)</h3>
+          <span class="text-xs text-amber-400 font-mono" id="admin-sale-code-display">-</span>
+        </div>
+        <button onclick="closeModal('modal-admin-edit-sale')" class="text-zinc-400 hover:text-zinc-200 p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="admin-edit-sale-form" onsubmit="saveAdminEditedSale(event)" class="p-5 space-y-4 text-xs sm:text-sm">
+        <input type="hidden" id="admin-edit-sale-id">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label class="block font-bold text-amber-400 mb-1">حالة الطلب بالنظام</label>
+            <select id="admin-sale-status" class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none font-bold">
+              <option value="محجوز / غير مدفوع">محجوز / غير مدفوع ⏳</option>
+              <option value="محجوز / مدفوع">محجوز / مدفوع 📄</option>
+              <option value="مسترجع">مسترجع ↩️</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-zinc-300 mb-1">حالة الاستلام</label>
+            <select id="admin-sale-receipt-status" class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none font-bold">
+              <option value="تم الاستلام">تم الاستلام ✅</option>
+              <option value="لم يتم الاستلام">لم يتم الاستلام</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label class="block font-semibold text-zinc-300 mb-1">اسم العميل</label>
+            <input type="text" id="admin-sale-cust-name" required class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold text-zinc-300 mb-1">سعر البيع (د.ك)</label>
+            <input type="number" step="0.1" id="admin-sale-price" required class="w-full p-2.5 bg-zinc-900 border border-amber-500/60 rounded-lg text-amber-400 font-bold outline-none font-mono">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label class="block font-semibold text-zinc-300 mb-1">طريقة الدفع</label>
+            <select id="admin-sale-pay-method" class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none">
+              <option value="كي نت">كي نت (KNET)</option>
+              <option value="ومض">ومض (WAMD)</option>
+              <option value="تحويل بنكي">تحويل بنكي</option>
+              <option value="كاش">كاش</option>
+              <option value="أخرى">أخرى</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-zinc-300 mb-1">مستلم التحويل</label>
+            <input type="text" id="admin-sale-recipient" class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-zinc-300 mb-1">ملاحظات الطلب</label>
+          <textarea id="admin-sale-notes" rows="2" class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none"></textarea>
+        </div>
+
+        <div class="flex items-center justify-between pt-3 border-t border-zinc-800">
+          <button type="button" onclick="deleteSaleDirectly()" class="px-3 py-2 bg-red-950/60 hover:bg-red-900 text-red-400 font-bold rounded-lg text-xs flex items-center gap-1.5 transition">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+            <span>حذف الطلب نهائياً</span>
+          </button>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="closeModal('modal-admin-edit-sale')" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg font-semibold text-xs">إلغاء</button>
+            <button type="submit" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-zinc-950 font-black rounded-lg text-xs">حفظ التعديل</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. نافذة إضافة / تعديل مستخدم وتخصيص الصلاحيات المتقدمة -->
+  <div id="modal-user" class="fixed inset-0 custom-modal-backdrop z-50 hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-[#121214] border border-zinc-800 rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in text-zinc-100">
+      <div class="p-4 border-b border-zinc-800 flex items-center justify-between bg-[#0e0e10] rounded-t-xl">
+        <h3 class="font-bold text-sm" id="modal-user-title">إضافة موظف وتحديد صلاحياته</h3>
+        <button onclick="closeModal('modal-user')" class="text-zinc-400 hover:text-zinc-200 p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="user-form" onsubmit="saveUser(event)" class="p-5 space-y-4 text-xs sm:text-sm">
+        <input type="hidden" id="user-id">
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label class="block font-semibold text-zinc-300 mb-1">اسم الدخول (Username) <span class="text-amber-500">*</span></label>
+            <input type="text" id="usr-username" required class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold text-zinc-300 mb-1">الاسم الكامل <span class="text-amber-500">*</span></label>
+            <input type="text" id="usr-fullname" required class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          <div>
+            <label class="block font-semibold text-zinc-300 mb-1">كلمة المرور</label>
+            <input type="password" id="usr-password" class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none" placeholder="اتركها فارغة للتخطي">
+          </div>
+          <div>
+            <label class="block font-semibold text-zinc-300 mb-1">الدور العام</label>
+            <select id="usr-role" onchange="onUserRoleChange()" required class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none font-bold">
+              <option value="Employee">Employee (موظف مبيعات)</option>
+              <option value="Manager">Manager (مدير)</option>
+              <option value="Admin">Admin (المالك - Owner)</option>
+              <option value="View Only">View Only (مشاهدة فقط)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-zinc-300 mb-1">حالة الحساب</label>
+            <select id="usr-is-active" class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none font-bold">
+              <option value="1">مفعل ✅</option>
+              <option value="0">معطل ⛔</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- مصفوفة صلاحيات الصفحات المخصصة -->
+        <div class="p-3.5 bg-zinc-900 border border-zinc-800 rounded-lg space-y-2.5">
+          <div class="flex items-center justify-between border-b border-zinc-800 pb-1.5">
+            <span class="font-bold text-amber-400 text-xs flex items-center gap-1.5">
+              <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
+              <span>تخصيص الصفحات والصلاحيات لكل صفحة:</span>
+            </span>
+            <span class="text-[11px] text-zinc-400">تعديل / رؤية / إخفاء</span>
+          </div>
+
+          <div class="space-y-2 text-xs" id="permissions-matrix">
+            <div class="flex items-center justify-between py-1 border-b border-zinc-800/40">
+              <span class="text-zinc-200 font-semibold">1. لوحة التحكم</span>
+              <select id="perm-dashboard" class="p-1.5 bg-zinc-950 border border-zinc-800 rounded text-zinc-100 text-xs font-bold">
+                <option value="view">رؤية فقط (مشاهدة)</option>
+                <option value="none">مخفية ⛔</option>
+              </select>
+            </div>
+
+            <div class="flex items-center justify-between py-1 border-b border-zinc-800/40">
+              <span class="text-zinc-200 font-semibold">2. المسابيح / المخزون</span>
+              <select id="perm-misbahs" class="p-1.5 bg-zinc-950 border border-zinc-800 rounded text-zinc-100 text-xs font-bold">
+                <option value="edit">قراءة وإضافة وتعديل كامل ✅</option>
+                <option value="view">رؤية فقط (مشاهدة)</option>
+                <option value="none">مخفية ⛔</option>
+              </select>
+            </div>
+
+            <div class="flex items-center justify-between py-1 border-b border-zinc-800/40">
+              <span class="text-zinc-200 font-semibold">3. الطلبات والمبيعات</span>
+              <select id="perm-sales" class="p-1.5 bg-zinc-950 border border-zinc-800 rounded text-zinc-100 text-xs font-bold">
+                <option value="edit">قراءة وإضافة وتعديل كامل ✅</option>
+                <option value="view">رؤية فقط (مشاهدة)</option>
+                <option value="none">مخفية ⛔</option>
+              </select>
+            </div>
+
+            <div class="flex items-center justify-between py-1 border-b border-zinc-800/40">
+              <span class="text-zinc-200 font-semibold">4. العملاء المعتمدين</span>
+              <select id="perm-customers" class="p-1.5 bg-zinc-950 border border-zinc-800 rounded text-zinc-100 text-xs font-bold">
+                <option value="edit">قراءة وإضافة وتعديل كامل ✅</option>
+                <option value="view">رؤية فقط (مشاهدة)</option>
+                <option value="none">مخفية ⛔</option>
+              </select>
+            </div>
+
+            <div class="flex items-center justify-between py-1 border-b border-zinc-800/40">
+              <span class="text-zinc-200 font-semibold">5. أصحاب المسابيح والمستحقات</span>
+              <select id="perm-owners" class="p-1.5 bg-zinc-950 border border-zinc-800 rounded text-zinc-100 text-xs font-bold">
+                <option value="edit">قراءة وسداد كامل ✅</option>
+                <option value="view">رؤية فقط (مشاهدة)</option>
+                <option value="none">مخفية ⛔</option>
+              </select>
+            </div>
+
+            <div class="flex items-center justify-between py-1 border-b border-zinc-800/40">
+              <span class="text-zinc-200 font-semibold">6. التقارير المالية</span>
+              <select id="perm-reports" class="p-1.5 bg-zinc-950 border border-zinc-800 rounded text-zinc-100 text-xs font-bold">
+                <option value="view">رؤية فقط (مشاهدة)</option>
+                <option value="none">مخفية ⛔</option>
+              </select>
+            </div>
+
+            <div class="flex items-center justify-between py-1 border-b border-zinc-800/40">
+              <span class="text-zinc-200 font-semibold">7. المستخدمون والصلاحيات</span>
+              <select id="perm-users" class="p-1.5 bg-zinc-950 border border-zinc-800 rounded text-zinc-100 text-xs font-bold">
+                <option value="none">مخفية ⛔</option>
+                <option value="edit">إدارة وتعديل كامل ✅</option>
+              </select>
+            </div>
+
+            <div class="flex items-center justify-between py-1">
+              <span class="text-zinc-200 font-semibold">8. الهوية والإعدادات</span>
+              <select id="perm-settings" class="p-1.5 bg-zinc-950 border border-zinc-800 rounded text-zinc-100 text-xs font-bold">
+                <option value="none">مخفية ⛔</option>
+                <option value="edit">إدارة وتعديل كامل ✅</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-zinc-800">
+          <button type="button" onclick="closeModal('modal-user')" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg">إلغاء</button>
+          <button type="submit" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-zinc-950 font-black rounded-lg">حفظ الموظف والصلاحيات</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. نافذة استيراد العملاء من Excel -->
+  <div id="modal-import-excel" class="fixed inset-0 custom-modal-backdrop z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-[#121214] border border-zinc-800 rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in text-zinc-100 flex flex-col">
+      <div class="p-4 border-b border-zinc-800 flex items-center justify-between bg-[#0e0e10] rounded-t-xl">
+        <div class="flex items-center gap-2.5">
+          <i data-lucide="file-spreadsheet" class="w-5 h-5 text-emerald-400"></i>
+          <h3 class="font-bold text-sm">استيراد العملاء من ملف Excel</h3>
+        </div>
+        <button onclick="closeModal('modal-import-excel')" class="text-zinc-400 hover:text-zinc-200 p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4 text-xs sm:text-sm">
+        <div>
+          <label class="block font-bold text-zinc-300 mb-2">اختر ملف Excel (.xlsx / .xls):</label>
+          <input type="file" id="excel-import-file-input" accept=".xlsx, .xls, .csv" class="w-full text-xs text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-amber-500 file:text-zinc-950 hover:file:bg-amber-600 cursor-pointer">
+        </div>
+
+        <button type="button" onclick="processSelectedExcelFile()" id="btn-inspect-excel" class="w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold rounded-lg text-xs transition">
+          فحص بيانات الملف 🔍
+        </button>
+
+        <div id="excel-inspection-results" class="hidden space-y-3">
+          <div class="p-3 rounded-lg border" id="excel-status-box"></div>
+          <div id="excel-errors-list" class="space-y-1 max-h-36 overflow-y-auto pr-1"></div>
+          <button type="button" onclick="confirmExecuteExcelImport()" id="btn-confirm-import" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-lg text-xs transition">
+            تأكيد استيراد الصفوف الصالحة ✅
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. مودال سجل المسباح التاريخي TIMELINE MODAL -->
+  <div id="modal-misbah-timeline" class="fixed inset-0 custom-modal-backdrop z-50 hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-[#121214] border border-zinc-800 rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in text-zinc-100 flex flex-col">
+      <div class="p-4 border-b border-zinc-800 flex items-center justify-between bg-[#0e0e10] rounded-t-xl">
+        <div class="flex items-center gap-2.5">
+          <i data-lucide="history" class="w-5 h-5 text-amber-500"></i>
+          <div>
+            <h3 class="font-bold text-sm">سجل المسباح التاريخي (Timeline)</h3>
+            <span class="text-xs text-amber-400 font-mono" id="timeline-misbah-code">ORD-101</span>
+          </div>
+        </div>
+        <button onclick="closeModal('modal-misbah-timeline')" class="text-zinc-400 hover:text-zinc-200 p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4 text-xs sm:text-sm flex-1 overflow-y-auto">
+        <div id="timeline-events-container" class="space-y-4 pr-1"></div>
+
+        <div class="border-t border-zinc-800 pt-3 space-y-2">
+          <label class="block font-semibold text-zinc-300 text-xs">إضافة ملاحظة / تحديث يدوي للسجل:</label>
+          <div class="flex gap-2">
+            <input type="text" id="timeline-new-note" placeholder="اكتب ملاحظة للمتابعة الداخلية..." class="flex-1 p-2 bg-zinc-900 border border-zinc-800 rounded-lg text-xs text-zinc-100 outline-none">
+            <button onclick="submitTimelineNote()" class="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold rounded-lg text-xs">إضافة</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. مودال تعديل بيانات مسباح بالمخزون -->
+  <div id="modal-edit-misbah" class="fixed inset-0 custom-modal-backdrop z-50 hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-[#121214] border border-zinc-800 rounded-xl max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in text-zinc-100">
+      <div class="p-4 border-b border-zinc-800 flex items-center justify-between bg-[#0e0e10] rounded-t-xl">
+        <div>
+          <h3 class="font-bold text-sm">تعديل بيانات المسباح بالمخزون</h3>
+          <span class="text-xs text-zinc-400 font-mono">رقم الطلب الثابت: <strong class="text-amber-400" id="edit-msb-code-display">ORD-101</strong></span>
+        </div>
+        <button onclick="closeModal('modal-edit-misbah')" class="text-zinc-400 hover:text-zinc-200 p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="edit-misbah-form" onsubmit="saveEditedMisbah(event)" class="p-5 space-y-4 text-xs sm:text-sm">
+        <input type="hidden" id="edit-msb-id">
+
+        <!-- اختيار صاحب المسباح / المورد من قائمة العملاء المعتمدين -->
+        <div class="bg-zinc-900/60 border border-amber-500/30 rounded-lg p-3.5 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="font-bold text-amber-400 text-xs flex items-center gap-1.5">
+              <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
+              صاحب المسباح / المورد
+            </label>
+            <button type="button" onclick="openOwnerPicker()" class="flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/15 hover:bg-amber-500/30 border border-amber-500/40 text-amber-400 rounded text-xs font-bold transition">
+              <i data-lucide="repeat-2" class="w-3 h-3"></i>
+              تغيير المورد
+            </button>
+          </div>
+
+          <!-- عرض المورد الحالي -->
+          <div id="edit-msb-owner-display" class="flex items-center gap-3 bg-zinc-950/60 border border-zinc-700 rounded-lg px-3 py-2.5">
+            <div class="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+              <i data-lucide="user" class="w-4 h-4 text-amber-400"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="font-bold text-zinc-100 text-xs" id="edit-msb-owner-name-display">—</div>
+              <div class="text-zinc-400 font-mono text-[11px]" id="edit-msb-owner-phone-display">—</div>
+            </div>
+          </div>
+
+          <!-- حقول مخفية تُرسل مع الـ form -->
+          <input type="hidden" id="edit-msb-owner-name">
+          <input type="hidden" id="edit-msb-owner-phone">
+
+          <p class="text-[10px] text-zinc-500 flex items-center gap-1">
+            <i data-lucide="info" class="w-3 h-3"></i>
+            لتعديل بيانات الشخص (الاسم/الرقم) اذهب إلى صفحة العملاء المعتمدين
+          </p>
+        </div>
+
+        <!-- نافذة اختيار المورد -->
+        <div id="owner-picker-dropdown" class="hidden bg-zinc-950 border border-amber-500/40 rounded-lg shadow-xl max-h-52 overflow-y-auto space-y-0.5 p-1.5">
+          <div class="px-2 pb-1.5 pt-0.5">
+            <input type="text" id="owner-picker-search" placeholder="بحث باسم أو رقم..." oninput="filterOwnerPicker()" class="w-full p-2 bg-zinc-900 border border-zinc-700 rounded text-xs text-zinc-100 outline-none">
+          </div>
+          <div id="owner-picker-list" class="space-y-0.5"></div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label class="block font-semibold text-zinc-300 mb-1">القصة <span class="text-amber-500">*</span></label>
+            <select id="edit-msb-cut" class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none">
+              <option value="برميلي">برميلي</option>
+              <option value="ذروي">ذروي</option>
+              <option value="اسطواني">اسطواني</option>
+              <option value="كروي">كروي</option>
+              <option value="تفاحي">تفاحي</option>
+              <option value="زيتوني">زيتوني</option>
+              <option value="بيضاوي">بيضاوي</option>
+              <option value="صنوبري">صنوبري</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-zinc-300 mb-1">الخامة / المادة <span class="text-amber-500">*</span></label>
+            <input type="text" id="edit-msb-material" required class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          <div>
+            <label class="block font-semibold text-zinc-300 mb-1">الوزن (جرام) <span class="text-amber-500">*</span></label>
+            <input type="number" step="0.1" id="edit-msb-weight" required class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold text-zinc-300 mb-1">عدد الخرز <span class="text-amber-500">*</span></label>
+            <input type="number" id="edit-msb-beads" required class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold text-zinc-300 mb-1">السعر الأصلي (د.ك) <span class="text-amber-500">*</span></label>
+            <input type="number" step="0.5" id="edit-msb-price" required class="w-full p-2.5 bg-zinc-900 border border-amber-500/60 rounded-lg text-zinc-100 font-bold outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-zinc-300 mb-1">حالة المسباح</label>
+          <select id="edit-msb-status" onchange="onEditMisbahStatusChange()" class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none font-bold">
+            <option value="حالي">حالي بالمخزون</option>
+            <option value="مسترجع">مسترجع ↩️</option>
+          </select>
+        </div>
+
+        <div id="edit-msb-return-reason-container" class="hidden">
+          <label class="block font-bold text-rose-400 mb-1">سبب الاسترجاع <span class="text-rose-500">*</span></label>
+          <input type="text" id="edit-msb-return-reason" class="w-full p-2.5 bg-zinc-900 border border-rose-900/50 rounded-lg text-zinc-100 outline-none" placeholder="اكتب سبب الاسترجاع لإعادة المسباح للمخزون...">
+        </div>
+
+        <div>
+          <label class="block font-semibold text-zinc-300 mb-1">ملاحظات</label>
+          <textarea id="edit-msb-notes" rows="2" class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none"></textarea>
+        </div>
+
+        <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-zinc-800">
+          <button type="button" onclick="closeModal('modal-edit-misbah')" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg font-semibold">إلغاء</button>
+          <button type="submit" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-zinc-950 font-black rounded-lg">حفظ التعديلات</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 6. مودال إضافة مسباح جديد للمخزون -->
+  <div id="modal-misbah" class="fixed inset-0 custom-modal-backdrop z-50 hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-[#121214] border border-zinc-800 rounded-xl max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in text-zinc-100">
+      <div class="p-4 border-b border-zinc-800 flex items-center justify-between bg-[#0e0e10] rounded-t-xl">
+        <h3 class="font-bold text-sm">إضافة مسباح جديد للمخزون</h3>
+        <button onclick="closeModal('modal-misbah')" class="text-zinc-400 hover:text-zinc-200 p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="misbah-form" onsubmit="saveMisbah(event)" class="p-5 space-y-4 text-xs sm:text-sm">
+        <input type="hidden" id="misbah-id">
+        <input type="hidden" id="msb-owner-id">
+
+        <div class="p-3.5 bg-zinc-900 border border-zinc-800 rounded-lg space-y-2">
+          <label class="block font-bold text-amber-400">صاحب المسباح / المورد (من العملاء المعتمدين) <span class="text-amber-500">*</span></label>
+          <div class="relative">
+            <i data-lucide="search" class="w-4 h-4 text-zinc-500 absolute right-3 top-1/2 -translate-y-1/2"></i>
+            <input type="text" id="msb-owner-search" oninput="searchSuppliersForMisbah()" placeholder="ابحث باسم المورد أو رقم الهاتف..." 
+                   class="w-full pl-3 pr-9 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 outline-none focus:border-amber-500">
+          </div>
+          <div id="msb-supplier-results" class="max-h-28 overflow-y-auto space-y-1 border border-zinc-800 rounded p-1.5 bg-zinc-950/50"></div>
+          <div id="msb-selected-supplier-card" class="hidden p-2.5 bg-emerald-950/20 border border-emerald-900/40 rounded flex items-center justify-between">
+            <div>
+              <span class="font-bold text-emerald-400 block" id="msb-sel-owner-name">-</span>
+              <span class="text-xs text-zinc-400 font-mono" id="msb-sel-owner-phone">-</span>
+            </div>
+            <span class="text-xs text-emerald-400 font-bold">مورد معتمد ومحدد ✅</span>
+          </div>
+          <input type="hidden" id="msb-owner-name" required>
+          <input type="hidden" id="msb-owner-phone" required>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label class="block font-semibold text-zinc-300 mb-1">القصة <span class="text-amber-500">*</span></label>
+            <select id="msb-cut-select" required onchange="handleOtherOption('msb-cut-select', 'msb-cut-custom')" class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none">
+              <option value="برميلي">برميلي</option>
+              <option value="ذروي">ذروي</option>
+              <option value="اسطواني">اسطواني</option>
+              <option value="كروي">كروي</option>
+              <option value="تفاحي">تفاحي</option>
+              <option value="زيتوني">زيتوني</option>
+              <option value="بيضاوي">بيضاوي</option>
+              <option value="صنوبري">صنوبري</option>
+              <option value="أخرى">أخرى (كتابة يدوي)</option>
+            </select>
+            <input type="text" id="msb-cut-custom" class="hidden mt-2 w-full p-2 bg-zinc-800 border border-amber-500/50 rounded-lg text-zinc-100 outline-none" placeholder="اكتب القصة...">
+          </div>
+
+          <div>
+            <label class="block font-semibold text-zinc-300 mb-1">الخامة / المادة <span class="text-amber-500">*</span></label>
+            <select id="msb-mat-select" required onchange="handleOtherOption('msb-mat-select', 'msb-mat-custom')" class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none">
+              <option value="كهرمان بولندي قديم">كهرمان بولندي قديم</option>
+              <option value="كهرمان دومينيكاني أزرق">كهرمان دومينيكاني أزرق</option>
+              <option value="فاتوران ألماني صب قديم">فاتوران ألماني صب قديم</option>
+              <option value="بكلايت بلجيكي">بكلايت بلجيكي</option>
+              <option value="سندلوس تركي">سندلوس تركي</option>
+              <option value="فضة">فضة</option>
+              <option value="عاج طبيعي">عاج طبيعي</option>
+              <option value="خشب">خشب</option>
+              <option value="حجر">حجر</option>
+              <option value="أخرى">أخرى (كتابة يدوي)</option>
+            </select>
+            <input type="text" id="msb-mat-custom" class="hidden mt-2 w-full p-2 bg-zinc-800 border border-amber-500/50 rounded-lg text-zinc-100 outline-none" placeholder="اكتب نوع المادة...">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label class="block font-semibold text-zinc-300 mb-1">الوزن بالجرام <span class="text-amber-500">*</span></label>
+            <input type="number" step="0.1" id="msb-weight" required class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none" placeholder="48.5">
+          </div>
+          <div>
+            <label class="block font-semibold text-zinc-300 mb-1">عدد الخرز <span class="text-amber-500">*</span></label>
+            <input type="number" id="msb-bead-count" required value="33" class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 bg-zinc-900 p-3.5 rounded-lg border border-zinc-800">
+          <div>
+            <label class="block font-bold text-zinc-200 mb-1 text-xs">السعر الأصلي (د.ك) <span class="text-amber-500">*</span></label>
+            <input type="number" step="0.5" id="msb-orig-price" required oninput="calculateLivePricing()" class="w-full p-2 bg-zinc-950 border border-amber-500/60 rounded-lg text-zinc-100 font-bold outline-none" placeholder="0.0">
+          </div>
+          <div>
+            <label class="block font-bold text-amber-300 mb-1 text-xs">ربح النظام</label>
+            <input type="number" step="0.01" id="msb-profit" readonly class="w-full p-2 bg-zinc-950 border border-zinc-800 rounded-lg text-amber-300 font-bold outline-none cursor-not-allowed" value="0.0">
+          </div>
+          <div>
+            <label class="block font-bold text-rose-300 mb-1 text-xs">المستحق للمورد</label>
+            <input type="number" step="0.01" id="msb-supplier-due" readonly class="w-full p-2 bg-zinc-950 border border-zinc-800 rounded-lg text-rose-300 font-bold outline-none cursor-not-allowed" value="0.0">
+          </div>
+          <div>
+            <label class="block font-bold text-amber-400 mb-1 text-xs">سعر البيع</label>
+            <input type="number" step="0.01" id="msb-selling-price" readonly class="w-full p-2 bg-zinc-950 border border-zinc-800 rounded-lg text-amber-400 font-black outline-none cursor-not-allowed" value="0.0">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-zinc-400 mb-1">ملاحظات داخلية</label>
+          <textarea id="msb-notes" rows="2" class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none"></textarea>
+        </div>
+
+        <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-zinc-800">
+          <button type="button" onclick="closeModal('modal-misbah')" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg font-semibold">إلغاء</button>
+          <button type="submit" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-zinc-950 font-black rounded-lg">حفظ المسباح</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 7. مودال تسجيل طلب جديد NEW SALE (الديفولت: محجوز في المخزون / غير مدفوع) -->
+  <div id="modal-sale" class="fixed inset-0 custom-modal-backdrop z-50 hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-[#121214] border border-zinc-800 rounded-xl max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in text-zinc-100">
+      <div class="p-4 border-b border-zinc-800 flex items-center justify-between bg-[#0e0e10] rounded-t-xl">
+        <h3 class="font-bold text-sm">تسجيل طلب جديد (الديفولت: محجوز بالمخزون)</h3>
+        <button onclick="closeModal('modal-sale')" class="text-zinc-400 hover:text-zinc-200 p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="sale-form" onsubmit="saveNewSale(event)" class="p-5 space-y-4 text-xs sm:text-sm">
+        
+        <div class="p-3.5 bg-zinc-900 border border-zinc-800 rounded-lg space-y-2">
+          <label class="block font-bold text-amber-400">1. اختيار المسباح من المخزون</label>
+          <div class="relative">
+            <i data-lucide="search" class="w-4 h-4 text-zinc-500 absolute right-3 top-1/2 -translate-y-1/2"></i>
+            <input type="text" id="sale-misbah-search" oninput="filterSaleMisbahs()" placeholder="ابحث برقم الطلب، القصة، المورد..." 
+                   class="w-full pl-3 pr-9 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 outline-none focus:border-amber-500">
+          </div>
+          <div id="sale-misbah-results" class="max-h-28 overflow-y-auto space-y-1 border border-zinc-800 rounded p-1.5 bg-zinc-950/50"></div>
+          <input type="hidden" id="selected-sale-misbah-id" required>
+          <div id="sale-selected-misbah-card" class="hidden p-2.5 bg-amber-500/10 border border-amber-500/30 rounded flex items-center justify-between">
+            <div>
+              <span class="font-bold text-amber-400 font-mono block" id="sale-sel-code">ORD-101</span>
+              <span class="text-zinc-300 text-xs" id="sale-sel-desc">-</span>
+            </div>
+            <span class="font-black text-amber-400"><span id="sale-sel-price">0</span> د.ك</span>
+          </div>
+        </div>
+
+        <div class="p-3.5 bg-zinc-900 border border-zinc-800 rounded-lg space-y-2">
+          <div class="flex justify-between items-center">
+            <label class="block font-bold text-amber-400">2. العميل المعتمد (المشتري)</label>
+            <button type="button" onclick="openNewCustomerModal()" class="text-xs text-amber-400 hover:underline">اعتماد عميل جديد +</button>
+          </div>
+          <div class="flex gap-2">
+            <input type="text" id="sale-cust-identifier" oninput="lookupSaleCustomer()" class="flex-1 p-2 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 outline-none font-mono" placeholder="رقم الهاتف أو @tiktok...">
+            <button type="button" onclick="lookupSaleCustomer(true)" class="px-3.5 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg font-bold">تحقق</button>
+          </div>
+          <span id="sale-cust-lookup-status" class="text-xs block"></span>
+          <div id="sale-cust-info-card" class="hidden p-2.5 bg-zinc-950 border border-zinc-800 rounded flex justify-between items-center">
+            <div>
+              <span class="font-bold text-zinc-100 block" id="sale-verified-cust-name">-</span>
+              <span class="text-xs text-zinc-400 font-mono" id="sale-verified-cust-phone">-</span>
+            </div>
+            <span class="text-xs text-emerald-400 font-bold bg-emerald-950/40 px-2 py-0.5 rounded">معتمد ✅</span>
+          </div>
+        </div>
+
+        <div class="p-3.5 bg-zinc-900 border border-zinc-800 rounded-lg space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div>
+              <label class="block font-semibold text-zinc-300 mb-1">حالة الدفع (الديفولت: غير مدفوع)</label>
+              <select id="sale-payment-status" onchange="onSalePaymentStatusChange()" class="w-full p-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 outline-none font-bold">
+                <option value="غير مدفوع" selected>محجوز / غير مدفوع (حجز الطلب بالمخزون ⏳)</option>
+                <option value="مدفوع كامل">محجوز / مدفوع (إصدار فاتورة فوري 📄)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-semibold text-zinc-300 mb-1">طريقة الدفع</label>
+              <select id="sale-payment-method-select" onchange="handleOtherOption('sale-payment-method-select', 'sale-payment-method-custom')" class="w-full p-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 outline-none">
+                <option value="كي نت">كي نت (KNET)</option>
+                <option value="ومض">ومض (WAMD)</option>
+                <option value="أخرى">أخرى</option>
+              </select>
+              <input type="text" id="sale-payment-method-custom" class="hidden mt-2 w-full p-2 bg-zinc-800 border border-amber-500/50 rounded-lg text-zinc-100 outline-none" placeholder="اكتب طريقة الدفع...">
+            </div>
+          </div>
+
+          <div id="sale-paid-details-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 opacity-40">
+            <div>
+              <label class="block font-semibold text-zinc-300 mb-1">اسم مستلم التحويل</label>
+              <input type="text" id="sale-recipient-name" class="w-full p-2 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 outline-none" placeholder="اسم الشخص المحول إليه">
+            </div>
+            <div>
+              <label class="block font-semibold text-zinc-300 mb-1">دولة التوصيل</label>
+              <select id="sale-delivery-country-select" onchange="handleOtherOption('sale-delivery-country-select', 'sale-delivery-country-custom')" class="w-full p-2 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 outline-none">
+                <option value="الكويت 🇰🇼">الكويت 🇰🇼</option>
+                <option value="السعودية 🇸🇦">السعودية 🇸🇦</option>
+                <option value="الإمارات 🇦🇪">الإمارات 🇦🇪</option>
+                <option value="قطر 🇶🇦">قطر 🇶🇦</option>
+                <option value="البحرين 🇧🇭">البحرين 🇧🇭</option>
+                <option value="عمان 🇴🇲">عمان 🇴🇲</option>
+                <option value="أخرى">أخرى</option>
+              </select>
+              <input type="text" id="sale-delivery-country-custom" class="hidden mt-2 w-full p-2 bg-zinc-800 border border-amber-500/50 rounded-lg text-zinc-100 outline-none" placeholder="اكتب دولة التوصيل...">
+            </div>
+          </div>
+
+          <div id="sale-unpaid-notice" class="p-2.5 bg-amber-500/10 border border-amber-500/30 rounded text-amber-300 text-xs">
+            ⚠️ الديفولت: سيتم تسجيل الطلب كـ (محجوز / غير مدفوع) بالمخزون ولن تصدر فاتورة حتى يتم الدفع.
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-zinc-800">
+          <button type="button" onclick="closeModal('modal-sale')" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg font-semibold">إلغاء</button>
+          <button type="submit" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-zinc-950 font-black rounded-lg">حفظ الطلب</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 8. مودال إضافة وتوثيق عميل -->
+  <div id="modal-customer" class="fixed inset-0 custom-modal-backdrop z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-[#121214] border border-zinc-800 rounded-xl max-w-md w-full shadow-2xl animate-fade-in text-zinc-100">
+      <div class="p-4 border-b border-zinc-800 flex items-center justify-between bg-[#0e0e10] rounded-t-xl">
+        <h3 class="font-bold text-sm">إضافة وتوثيق شخص معتمد</h3>
+        <button onclick="closeModal('modal-customer')" class="text-zinc-400 hover:text-zinc-200 p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="customer-form" onsubmit="saveCustomer(event)" class="p-5 space-y-3.5 text-xs sm:text-sm">
+        <input type="hidden" id="customer-id">
+        <div>
+          <label class="block font-semibold text-zinc-300 mb-1">الاسم الكامل <span class="text-amber-500">*</span></label>
+          <input type="text" id="cust-name" required class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none">
+        </div>
+        <div>
+          <label class="block font-semibold text-zinc-300 mb-1">الهاتف ومفتاح الدولة</label>
+          <div class="flex gap-2">
+            <select id="cust-country-code" class="w-28 p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-200 outline-none font-mono text-xs">
+              <option value="+965">+965 🇰🇼</option>
+              <option value="+966">+966 🇸🇦</option>
+              <option value="+971">+971 🇦🇪</option>
+              <option value="+974">+974 🇶🇦</option>
+              <option value="+973">+973 🇧🇭</option>
+              <option value="+968">+968 🇴🇲</option>
+              <option value="custom">مفتاح آخر</option>
+            </select>
+            <input type="text" id="cust-custom-country-code" class="hidden w-20 p-2.5 bg-zinc-900 border border-amber-500 rounded-lg text-zinc-100 font-mono outline-none" placeholder="+XXX">
+            <input type="text" id="cust-phone" class="flex-1 p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 font-mono outline-none" placeholder="9XXXXXXXX">
+          </div>
+        </div>
+        <div>
+          <label class="block font-semibold text-zinc-300 mb-1">Username TikTok</label>
+          <input type="text" id="cust-tiktok" class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none" placeholder="@username">
+        </div>
+        <div>
+          <label class="block font-semibold text-zinc-300 mb-1">الدولة</label>
+          <select id="cust-country-select" onchange="handleOtherOption('cust-country-select', 'cust-country-custom')" class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none">
+            <option value="الكويت">الكويت</option>
+            <option value="السعودية">السعودية</option>
+            <option value="الإمارات">الإمارات</option>
+            <option value="قطر">قطر</option>
+            <option value="البحرين">البحرين</option>
+            <option value="عمان">عمان</option>
+            <option value="أخرى">أخرى</option>
+          </select>
+          <input type="text" id="cust-country-custom" class="hidden mt-2 w-full p-2 bg-zinc-800 border border-amber-500/50 rounded-lg text-zinc-100 outline-none" placeholder="اكتب الدولة...">
+        </div>
+        <div>
+          <label class="block font-semibold text-zinc-300 mb-1">حالة الاعتماد</label>
+          <select id="cust-reliability" class="w-full p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 outline-none font-bold">
+            <option value="معتمد">معتمد ✅</option>
+            <option value="محظور">محظور ⛔</option>
+          </select>
+        </div>
+        <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-zinc-800">
+          <button type="button" onclick="closeModal('modal-customer')" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg">إلغاء</button>
+          <button type="submit" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-zinc-950 font-black rounded-lg">حفظ الشخص</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 9. مودال الفاتورة الرسمية -->
+  <div id="modal-invoice" class="fixed inset-0 custom-modal-backdrop z-50 hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-[#121214] border border-zinc-800 rounded-xl max-w-lg w-full max-h-[95vh] overflow-y-auto shadow-2xl animate-fade-in flex flex-col text-zinc-100">
+      
+      <div class="p-3.5 border-b border-zinc-800 flex items-center justify-between no-print bg-[#0e0e10] rounded-t-xl">
+        <h3 class="font-bold text-xs sm:text-sm text-zinc-200 flex items-center gap-2">
+          <i data-lucide="receipt" class="w-4 h-4 text-amber-500"></i>
+          <span>سند البيع والفاتورة</span>
+        </h3>
+        <div class="flex items-center gap-2">
+          <button onclick="downloadInvoicePDF()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded text-xs font-bold flex items-center gap-1.5 transition">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>تحميل PDF</span>
+          </button>
+          <button onclick="shareInvoiceWhatsApp()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1.5 transition">
+            <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+            <span>واتساب</span>
+          </button>
+          <button onclick="window.print()" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-1.5 rounded text-xs font-bold transition">
+            <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+          </button>
+          <button onclick="closeModal('modal-invoice')" class="text-zinc-400 hover:text-zinc-200 p-1.5">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="p-5 overflow-y-auto">
+        <!-- حاوي الفاتورة بأبعاد A4 -->
+        <div id="invoice-render-area"
+             style="width:210mm; min-height:270mm; background:#18181b; border-radius:8px; display:flex; flex-direction:column; padding:12mm 14mm; box-sizing:border-box; gap:0; font-family:'Segoe UI',Tahoma,Arial,sans-serif;"
+             class="mx-auto text-right">
+
+          <!-- رأس الفاتورة: الشعار + اسم المتجر -->
+          <div style="text-align:center; border-bottom:1px solid #3f3f46; padding-bottom:8mm; margin-bottom:7mm;">
+            <img id="inv-logo-img" src="https://k.top4top.io/p_38967jw2l0.png?utm_source=chatgpt.com" alt="عبق الكهرب"
+                 style="width:72px; height:72px; object-fit:contain; margin:0 auto 6px; display:block;">
+            <h2 style="font-size:20px; font-weight:900; color:#f4f4f5; margin:0 0 4px;" id="inv-store-name">عبق الكهرب</h2>
+            <p style="font-size:11px; font-weight:700; color:#f59e0b; margin:0 0 3px;">سند بيع واستلام رسمي</p>
+            <p style="font-size:11px; color:#a1a1aa; font-family:monospace; margin:0;" id="inv-store-phone">+965 99887766 | @abaq_alkahrab</p>
+          </div>
+
+          <!-- بيانات الطلب والعميل في شبكة -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:4mm 6mm; background:#27272a; border-radius:8px; padding:6mm; margin-bottom:7mm; border:1px solid #3f3f46;">
+            <div>
+              <span style="font-size:10px; color:#71717a; display:block; margin-bottom:2px;">رقم الفاتورة</span>
+              <span style="font-size:13px; font-weight:700; color:#fbbf24; font-family:monospace;" id="inv-code">INV-2026-001</span>
+            </div>
+            <div>
+              <span style="font-size:10px; color:#71717a; display:block; margin-bottom:2px;">رقم الطلب</span>
+              <span style="font-size:13px; font-weight:700; color:#fcd34d; font-family:monospace;" id="inv-misbah-order-code">ORD-101</span>
+            </div>
+            <div>
+              <span style="font-size:10px; color:#71717a; display:block; margin-bottom:2px;">العميل</span>
+              <span style="font-size:13px; font-weight:700; color:#f4f4f5;" id="inv-customer-name">—</span>
+            </div>
+            <div>
+              <span style="font-size:10px; color:#71717a; display:block; margin-bottom:2px;">الهاتف / TikTok</span>
+              <span style="font-size:12px; font-weight:600; color:#e4e4e7; font-family:monospace;" id="inv-customer-phone">—</span>
+            </div>
+            <div>
+              <span style="font-size:10px; color:#71717a; display:block; margin-bottom:2px;">دولة التوصيل</span>
+              <span style="font-size:13px; font-weight:600; color:#e4e4e7;" id="inv-delivery-country">الكويت 🇰🇼</span>
+            </div>
+            <div>
+              <span style="font-size:10px; color:#71717a; display:block; margin-bottom:2px;">التاريخ</span>
+              <span style="font-size:12px; font-weight:600; color:#e4e4e7; font-family:monospace;" id="inv-date">—</span>
+            </div>
+          </div>
+
+          <!-- جدول المنتج -->
+          <div style="margin-bottom:7mm; flex:1;">
+            <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:right;">
+              <thead>
+                <tr style="border-bottom:2px solid #f59e0b;">
+                  <th style="padding:5mm 3mm 3mm; color:#a1a1aa; font-weight:600;">المنتج</th>
+                  <th style="padding:5mm 3mm 3mm; color:#a1a1aa; font-weight:600;">الوزن / الخرز</th>
+                  <th style="padding:5mm 3mm 3mm; color:#a1a1aa; font-weight:600; text-align:left;">السعر</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-bottom:1px solid #3f3f46;">
+                  <td style="padding:5mm 3mm; font-weight:700; color:#f4f4f5; font-size:13px;" id="inv-misbah-desc">—</td>
+                  <td style="padding:5mm 3mm; color:#d4d4d8;" id="inv-misbah-weight">—</td>
+                  <td style="padding:5mm 3mm; font-weight:900; color:#fbbf24; font-size:16px; text-align:left;">
+                    <span id="inv-selling-price">0</span> <span style="font-size:12px;">د.ك</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- ملخص الدفع -->
+          <div style="background:#27272a; border-radius:8px; padding:6mm; margin-bottom:7mm; border:1px solid #3f3f46;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3mm;">
+              <span style="font-size:13px; font-weight:700; color:#e4e4e7;">الإجمالي:</span>
+              <span style="font-size:15px; font-weight:900; color:#f4f4f5; font-family:monospace;"><span id="inv-total">0</span> د.ك</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3mm;">
+              <span style="font-size:13px; font-weight:700; color:#34d399;">المبلغ المسدد:</span>
+              <span style="font-size:15px; font-weight:900; color:#34d399; font-family:monospace;"><span id="inv-paid">0</span> د.ك</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2mm; padding-top:3mm; border-top:1px dashed #52525b;">
+              <span style="font-size:11px; color:#71717a;">طريقة الدفع:</span>
+              <span style="font-size:12px; color:#a1a1aa; font-weight:600;" id="inv-method">—</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center;" id="inv-recipient-row">
+              <span style="font-size:11px; color:#71717a;">تم التحويل إلى:</span>
+              <span style="font-size:12px; color:#a1a1aa; font-weight:600;" id="inv-recipient-name">—</span>
+            </div>
+          </div>
+
+          <!-- الفاصل والتذييل -->
+          <div style="border-top:1px dashed #52525b; padding-top:6mm; text-align:center; margin-top:auto;">
+            <!-- شريط مزخرف -->
+            <div style="display:flex; align-items:center; gap:3mm; margin-bottom:5mm; justify-content:center;">
+              <div style="flex:1; height:1px; background:linear-gradient(to right,transparent,#f59e0b44);"></div>
+              <span style="font-size:16px;">📿</span>
+              <div style="flex:1; height:1px; background:linear-gradient(to left,transparent,#f59e0b44);"></div>
+            </div>
+            <p style="font-size:11px; color:#71717a; margin:0 0 4px; line-height:1.6;" id="inv-footer-text">
+              شكراً لتعاملكم مع عبق الكهرب. المسابيح المباعة أصلية ومفحوصة مخبرياً.
+            </p>
+            <p style="font-size:10px; color:#52525b; margin:0; font-family:monospace;">عبق الكهرب © 2026</p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10. مودال السجل الموحد للشخص -->
+  <div id="modal-customer-profile" class="fixed inset-0 custom-modal-backdrop z-50 hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-[#121214] border border-zinc-800 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in text-zinc-100 flex flex-col">
+      <div class="p-4 border-b border-zinc-800 flex items-center justify-between bg-[#0e0e10] rounded-t-xl">
+        <div>
+          <h3 class="font-bold text-sm" id="cust-profile-name">الملف والسجل الموحد</h3>
+          <span class="text-xs text-amber-400 font-mono" id="cust-profile-phone">-</span>
+        </div>
+        <button onclick="closeModal('modal-customer-profile')" class="text-zinc-400 hover:text-zinc-200 p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4 text-xs sm:text-sm flex-1 overflow-y-auto">
+        <div class="p-3 bg-zinc-900/90 border border-zinc-800 rounded-lg flex items-center justify-between">
+          <div class="text-xs text-zinc-300 flex items-center gap-2">
+            <i data-lucide="clock" class="w-4 h-4 text-amber-500"></i>
+            <span id="cust-profile-registration-date">تم تسجيل العميل بتاريخ: --/--/----</span>
+          </div>
+          <span class="text-xs font-bold text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-2.5 py-1 rounded">معتمد ✅</span>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 bg-zinc-900 p-3 rounded-lg border border-zinc-800 text-center">
+          <div><span class="text-xs text-zinc-500 block">TikTok</span><span class="font-bold text-amber-400" id="cust-profile-tiktok">-</span></div>
+          <div><span class="text-xs text-zinc-500 block">الدولة</span><span class="font-bold text-zinc-200" id="cust-profile-country">-</span></div>
+          <div><span class="text-xs text-zinc-500 block">إجمالي مشترياته</span><span class="font-black text-amber-400"><span id="cust-profile-total-spent">0</span> د.ك</span></div>
+          <div><span class="text-xs text-zinc-500 block">مستحقاته كمورد</span><span class="font-black text-rose-400"><span id="cust-profile-pending-dues">0</span> د.ك</span></div>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-xs sm:text-sm text-zinc-200 mb-2">سجل المشتريات والحجوزات</h4>
+          <div class="overflow-x-auto border border-zinc-800 rounded-lg">
+            <table class="w-full text-right text-xs">
+              <thead class="bg-zinc-900 text-zinc-400">
+                <tr>
+                  <th class="py-2.5 px-3">رقم الطلب / الفاتورة</th>
+                  <th class="py-2.5 px-3">حالة الطلب</th>
+                  <th class="py-2.5 px-3">المسباح</th>
+                  <th class="py-2.5 px-3">السعر</th>
+                  <th class="py-2.5 px-3">التاريخ</th>
+                </tr>
+              </thead>
+              <tbody id="cust-profile-sales-tbody" class="divide-y divide-zinc-800/50"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-xs sm:text-sm text-zinc-200 mb-2">المسابيح الموردة</h4>
+          <div class="overflow-x-auto border border-zinc-800 rounded-lg">
+            <table class="w-full text-right text-xs">
+              <thead class="bg-zinc-900 text-zinc-400">
+                <tr>
+                  <th class="py-2.5 px-3">رقم المسباح</th>
+                  <th class="py-2.5 px-3">القصة والخامة</th>
+                  <th class="py-2.5 px-3">حالة القطعة</th>
+                  <th class="py-2.5 px-3">المستحق للمورد</th>
+                  <th class="py-2.5 px-3">حالة السداد</th>
+                </tr>
+              </thead>
+              <tbody id="cust-profile-supplied-tbody" class="divide-y divide-zinc-800/50"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 11. نوافذ التنبيه والتأكيد Dialogs -->
+  <div id="modal-custom-confirm" class="fixed inset-0 custom-modal-backdrop z-50 hidden flex items-center justify-center p-4">
+    <div class="custom-dialog-box rounded-xl max-w-sm w-full p-5 space-y-4 text-zinc-100 animate-fade-in text-center">
+      <h3 class="font-bold text-sm text-zinc-100" id="custom-confirm-title">تأكيد الإجراء</h3>
+      <p class="text-xs sm:text-sm text-zinc-400" id="custom-confirm-message">هل أنت متأكد من تنفيذ هذا الإجراء؟</p>
+      <div class="flex items-center justify-center gap-2.5 pt-2">
+        <button id="custom-confirm-cancel-btn" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg font-semibold text-xs">إلغاء</button>
+        <button id="custom-confirm-ok-btn" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-black text-xs">تأكيد</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-custom-alert" class="fixed inset-0 custom-modal-backdrop z-50 hidden flex items-center justify-center p-4">
+    <div class="custom-dialog-box rounded-xl max-w-sm w-full p-5 space-y-4 text-zinc-100 animate-fade-in text-center">
+      <div class="w-11 h-11 mx-auto rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-lg border border-amber-500/30" id="custom-alert-icon-box">
+        <i data-lucide="info" class="w-6 h-6 text-amber-400" id="custom-alert-icon"></i>
+      </div>
+      <div>
+        <h3 class="font-bold text-sm text-zinc-100 mb-1" id="custom-alert-title">تنبيه</h3>
+        <p class="text-xs sm:text-sm text-zinc-300 leading-relaxed" id="custom-alert-message">رسالة التنبيه</p>
+      </div>
+      <button onclick="closeModal('modal-custom-alert')" class="w-full px-4 py-2 bg-amber-500 hover:bg-amber-600 text-zinc-950 rounded-lg font-black text-xs">حسناً</button>
+    </div>
+  </div>
+
+  <!-- حاوية التنبيهات السريعة Toast Notifications -->
+  <div id="toast-container" class="fixed bottom-5 left-5 z-50 space-y-2 pointer-events-none"></div>
+
+  <!-- JavaScript Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
