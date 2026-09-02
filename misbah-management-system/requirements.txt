@@ -1,2 +1,0 @@
-# نظام عبق الكهرب — قاعدة البيانات PostgreSQL (Supabase)
-psycopg2-binary==2.9.9
